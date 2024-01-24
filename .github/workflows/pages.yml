@@ -1,0 +1,47 @@
+name: Hexo搭建@喵呜酱
+
+on:
+  push:
+    branches:
+      - main # 默认分支
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          submodules: recursive
+      - name: 使用Node.js 21.5.0
+        uses: actions/setup-node@v2
+        with:
+          node-version: '21.5.0'
+      - name: 通过NPM下载依赖库
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.OS }}-npm-cache
+          restore-keys: |
+            ${{ runner.OS }}-npm-cache
+      - name: 安装依赖库
+        run: npm install
+      - name: 网站编译
+        run: npm run build
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: ./public
+  deploy:
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: 上传到Github Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
